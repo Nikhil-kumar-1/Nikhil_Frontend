@@ -1,0 +1,110 @@
+Q1.Explain what the simple List component does.
+
+The List component is a simple React functional component that takes an array of items as a prop, where each item is an object with a text property. It renders a <ul> element containing several <li> elements, one for each item in the items array.
+
+The List component uses the SingleListItem component to render each individual list item. The SingleListItem component takes the following props:
+
+index: The index of the item in the items array.
+isSelected: A boolean indicating whether the item is currently selected.
+onClickHandler: A function that will be called when the item is clicked.
+text: The text to be displayed in the list item.
+The SingleListItem component renders an <li> element with a background color that is green if the item is selected, and red otherwise. It also passes the onClickHandler function to the <li> element, so that it will be called when the item is clicked.
+
+The List component uses the useState hook to keep track of the index of the currently selected item. It initializes the selected index to null, and sets it to null again whenever the items prop changes. This ensures that the selected item is cleared whenever the list of items changes.
+
+The List component also uses the useEffect hook to clear the selected index whenever the items prop changes.
+
+Finally, both SingleListItem and ListComponent are wrapped with memo, a higher-order component that helps optimize the rendering of the components by preventing unnecessary re-renders when their props have not changed.
+
+
+
+Q2.What problems / warnings are there with code?
+
+There are a few problems and warnings with the provided code:
+
+The isSelected prop in SingleListItem is expected to be a boolean, but it is assigned the value of selectedIndex, which is a state variable. This means that isSelected will always be truthy, even when it should be falsy. To fix this, change isSelected={selectedIndex} to isSelected={selectedIndex === index} in the SingleListItem component.
+
+The items prop in WrappedListComponent is marked as required in the propTypes, but it is given a default value of null in defaultProps. This can be confusing, because it suggests that the prop is both required and optional. To fix this, remove the defaultProps definition or remove the isRequired flag from the items prop in propTypes.
+
+The items prop in WrappedListComponent is defined as an array of objects with a text property using PropTypes.shapeOf(). However, the correct syntax is PropTypes.arrayOf(PropTypes.shape()). To fix this, change PropTypes.shapeOf() to PropTypes.shape().
+
+The onClickHandler prop in SingleListItem is expected to be a function, but it is being called immediately with the index argument. This means that the onClickHandler function will not be called when the item is clicked, but instead will be called immediately when the SingleListItem component is rendered. To fix this, change onClick={onClickHandler(index)} to onClick={() => onClickHandler(index)}.
+
+The setSelectedIndex function in WrappedListComponent is incorrectly defined as a state setter function, but it should be a state initializer function. To fix this, change const [setSelectedIndex, selectedIndex] = useState(); to const [selectedIndex, setSelectedIndex] = useState(null);
+
+
+
+
+Q3. Please fix, optimize , and/or modify the component as much as you think is necessary.
+
+import React, { useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
+
+// Single List Item
+const SingleListItem = ({ index, isSelected, onClickHandler, text }) => {
+  return (
+    <li
+      style={{ backgroundColor: isSelected ? 'green' : 'red'}}
+      onClick={onClickHandler}
+    >
+      {text}
+    </li>
+  );
+};
+
+SingleListItem.propTypes = {
+  index: PropTypes.number.isRequired,
+  isSelected: PropTypes.bool.isRequired,
+  onClickHandler: PropTypes.func.isRequired,
+  text: PropTypes.string.isRequired,
+};
+
+// List Component
+const List = ({ items }) => {
+  const [selectedIndex, setSelectedIndex] = useState(null);
+
+  useEffect(() => {
+    setSelectedIndex(null);
+  }, [items]);
+
+  const handleClick = useCallback((index) => {
+    setSelectedIndex(index);
+  }, []);
+
+  return (
+    <ul style={{ textAlign: 'left' }}>
+      {items.map((item, index) => (
+        <SingleListItem
+          key={index}
+          onClickHandler={() => handleClick(index)}
+          text={item.text}
+          index={index}
+          isSelected={selectedIndex === index}
+        />
+      ))}
+    </ul>
+  );
+};
+
+List.propTypes = {
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      text: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+};
+
+export default List;
+
+
+
+Here's a summary of the changes:
+
+The SingleListItem component now correctly assigns isSelected to selectedIndex === index to ensure that it is a boolean.
+The onClickHandler prop in SingleListItem now uses a callback function to ensure that it is not called immediately when the component is rendered.
+The setSelectedIndex function in List is now correctly defined as a state initializer function.
+The PropTypes definition for the items prop in List is now corrected to use PropTypes.arrayOf(PropTypes.shape()).
+A key prop is added to each SingleListItem component to help React keep track of the items when they are re-ordered or removed from the list.
+The useCallback hook is used to memoize the handleClick function, so that it is not re-created on every render.
+The memo higher-order component is removed from SingleListItem and List since they are already using useCallback to memoize their functions.
+The defaultProps definition is removed since it is not necessary.
